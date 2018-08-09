@@ -1,0 +1,39 @@
+name: uefsummer18
+channels:
+  - https://conda.anaconda.org/conda-forge
+  - defaults
+dependencies:
+  - python=3.5
+  - Cython
+  - pillow
+  - toolz
+  - psutil
+
+  # scienctific computing
+  - numpy=1.13.3
+  - scipy=0.19.1
+  - matplotlib
+  - seaborn # visualization
+  - pandas
+  - nose
+
+  # interactive ipython and notebook
+  - ipython
+  - ipywidgets=5.2.2
+
+  # graphic processing
+  - opencv
+  - scikit-learn
+
+  # data management
+  - h5py # create dataset
+
+  # others
+  - six
+  - resampy
+
+  - pip:
+    - soundfile # read sph audio file python
+    - librosa
+    - tensorflow
+    - tqdm
