@@ -1,6 +1,5 @@
-# Machine learning: Inferences in sequential data
-## Introduction to python programming and numpy
-### Tutors: [Trung Ngo Trong](trung@imito.ai), [Ivan Kukanov](ivan@kukanov.com), [Juha Mehtonen](juha.mehtonen@uef.fi)
+## Introduction to python programming, numpy and matplotlib
+### Tutors: [Ville Vestman](ville.vestman@gmail.com), [Trung Ngo Trong](trung@imito.ai), [Anssi Kanervisto](anssi.kanervisto@uef.fi)
 
 -----
 
