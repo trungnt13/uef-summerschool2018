@@ -31,9 +31,12 @@ dependencies:
   # others
   - six
   - resampy
+  - spyder
 
   - pip:
     - soundfile # read sph audio file python
     - librosa
     - tensorflow
     - tqdm
+    - gym
+    - torille
