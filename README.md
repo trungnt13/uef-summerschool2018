@@ -1,6 +1,6 @@
 # UEF - Summer School 2018
 
-How to clone all the code and data provided to your computer:
+How to clone all the code and data provided to your computer (alternatively download .zip file from github page):
 
 ```bash
 git clone --recursive git@github.com:trungnt13/uef-summerschool2018.git
@@ -13,6 +13,8 @@ For Windows users, using github desktop may significantly simplify the process:
 #### Installing miniconda
 Following the instruction and install Miniconda from this link:
 [https://conda.io/miniconda.html](https://conda.io/miniconda.html)
+
+#### On Windows: Launch "Anaconda Prompt".
 
 #### Create the environment
 > conda env create -f=environment.yml
