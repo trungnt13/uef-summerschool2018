@@ -39,4 +39,5 @@ dependencies:
     - tensorflow
     - tqdm
     - gym
+    - pyglet
     - torille
