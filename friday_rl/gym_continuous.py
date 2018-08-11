@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
-#  gym_discrete.py
-#  Example script of using OpenAI Gym in simple grid-world environment
+#  gym_continuous.py
+#  Example script of using OpenAI Gym in a simple continuous domain
 #
 import gym
 from time import sleep
