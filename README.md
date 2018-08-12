@@ -1,5 +1,7 @@
 # UEF - Summer School 2018
 
+[Programme and schedule](https://vvestman.github.io/summerschool/)
+
 How to clone all the code and data provided to your computer (alternatively download .zip file from github page):
 
 ```bash
