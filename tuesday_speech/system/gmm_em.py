@@ -109,25 +109,14 @@ class GMM(GmmUtils):
         p.close()
 
     # Added by Ville:
-    def adapt_means(self, data, relevance_factor):
+    def adapt(self, data, relevance_factor):
         N, F, S, L, nframes = self.expectation(data)
         alpha = N / (N + relevance_factor)  # tradeoff between ML mean and UBM mean
         m_ML = F / N
         m = self.mu * (1 - alpha) + m_ML * alpha
-        return m
-
-    # Added by Ville (scoring all models vs. all test segments):
-    def score_with_adapted_means(self, model_means, test_features):
-        n_models = model_means.size
-        n_test_segments = test_features.size
         adapted_gmm = copy.deepcopy(self)
-        scores = np.zeros((n_models, n_test_segments))
-        for test_segment in range(n_test_segments):
-            for model in range(n_models):
-                adapted_gmm.mu = model_means[model]
-                adapted_llk = adapted_gmm.compute_log_lik(test_features[test_segment])
-                scores[model, test_segment] = np.mean(adapted_llk)
-        return scores
+        adapted_gmm.mu = m
+        return adapted_gmm
 
 
     def expectation(self, data):
