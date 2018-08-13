@@ -5,7 +5,7 @@
 How to clone all the code and data provided to your computer (alternatively download .zip file from github page):
 
 ```bash
-git clone --recursive git@github.com:trungnt13/uef-summerschool2018.git
+git clone --recursive https://github.com/trungnt13/uef-summerschool2018.git
 ```
 For Windows users, using github desktop may significantly simplify the process:
 [https://desktop.github.com/](https://desktop.github.com/)
