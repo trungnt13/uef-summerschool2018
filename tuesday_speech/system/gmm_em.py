@@ -11,6 +11,7 @@ __email__ = 'omid.sadjadi@nist.gov'
 
 import time
 import numpy as np
+import multiprocessing as mp
 import copy
 
 EPS = np.finfo(float).eps
@@ -78,9 +79,16 @@ class GMM(GmmUtils):
         self.C_ = self.compute_C()
 
     def fit(self, data_list):
-
+        # binding of the main procedure gmm_em
+        p = mp.Pool(processes=self.nworkers)
+        if type(data_list) == str:
+            features_list = np.genfromtxt(data_list, dtype='str')
+        else:
+            features_list = data_list
+        nparts = min(self.nworkers, len(features_list))
+        data_split = np.array_split(features_list, nparts)
         print('\nInitializing the GMM hyperparameters ...\n')
-
+        # supports 4096 components, modify for more components
         niter = [1, 2, 4, 4, 4, 4, 6, 6, 10, 10, 10, 10, 10]
         niter[int(np.log2(self.nmix))] = self.final_iter
         mix = 1
@@ -90,12 +98,15 @@ class GMM(GmmUtils):
                 print('EM iter#: {} \t'.format(iter+1), end=" ")
                 self.C_ = self.compute_C()
                 tic = time.time()
-                N, F, S, L, nframes = self.expectation(data_list)
+                res = p.map(self.expectation, data_split)
+                N, F, S, L, nframes = GMM.reduce_expectation_res(res)
                 self.maximization(N, F, S)
                 print("[llk = {:.2f}]\t[elaps = {:.2f}s]".format(L/nframes,time.time() - tic))
+                del res
             if mix < self.nmix:
                 self.gmm_mixup()
             mix *= 2
+        p.close()
 
     # Added by Ville:
     def adapt_means(self, data, relevance_factor):
