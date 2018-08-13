@@ -2,6 +2,7 @@ import matplotlib
 # use simple 'Agg' backend for figure to PDF, switch to 'TkAgg'
 # if you want to show figure real time
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 import numpy as np
 import tensorflow as tf
@@ -11,7 +12,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 from utils import (read_audio_files, performance_evaluate,
                    extract_acoustic_features, one_hot,
                    stack_frames, segment_axis)
-from plot_utils import (plot_multiple_features, plot_save)
+from plot_utils import (plot_multiple_features, plot_save, plot_confusion_matrix)
 
 # use the same random seed for reproducibility
 np.random.seed(123456)
@@ -20,6 +21,11 @@ np.random.seed(123456)
 # ===========================================================================
 CONTEXT_LENGTH = 4 # i.e. 5 for left and 5 for right
 BATCH_SIZE = 32
+NUM_EPOCH = 1
+# Two different input mode:
+#  - one using sequencing: organize feature and context into 3-D tensor
+#  - one using stacking: stack context with feature into long vector
+INPUT_MODE = 'stacking'
 # ===========================================================================
 # Reading audio and preprocessing features
 # ===========================================================================
@@ -66,7 +72,11 @@ for name in all_name:
   # we use mfcc feature here, but can be changed
   x = mfcc
   # adding context window
-  x = stack_frames(x, frame_length=CONTEXT_LENGTH * 2 + 1)
+  if INPUT_MODE == 'stacking':
+    x = stack_frames(x, frame_length=CONTEXT_LENGTH * 2 + 1)
+  else:
+    x = segment_axis(x, frame_length=CONTEXT_LENGTH * 2 + 1,
+                     step_length=1, end='pad', pad_value=0.)
   y = [int(name.split('_')[0])] * len(x)
   # add to appropriate set
   if any(spk in name for spk in train_speakers):
@@ -87,6 +97,7 @@ y_score = one_hot(y_score, nb_classes=len(digits))
 # ====== print some logs ====== #
 print("Train speakers:", train_speakers, X_train.shape, y_train.shape)
 print("Score speakers:", score_speakers, X_score.shape, y_score.shape)
+exit()
 # ===========================================================================
 # Create keras network using tensorflow
 # ===========================================================================
@@ -103,14 +114,23 @@ model.compile(optimizer=tf.train.RMSPropOptimizer(0.01),
               loss=keras.losses.categorical_crossentropy,
               metrics=[keras.metrics.categorical_accuracy])
 # ====== start the training ====== #
-model.fit(X_train, y_train, epochs=1, batch_size=BATCH_SIZE,
+model.fit(X_train, y_train, epochs=NUM_EPOCH, batch_size=BATCH_SIZE,
           validation_split=0.1)
 # ===========================================================================
 # Evaluate the model
 # ===========================================================================
+# ====== evaluate the train data ====== #
+y_pred_probas = model.predict(X_train, batch_size=BATCH_SIZE)
+y_pred = np.argmax(y_pred_probas, axis=-1)
+train_report = classification_report(y_true=np.argmax(y_train, axis=-1), y_pred=y_pred)
+train_cm = confusion_matrix(y_true=np.argmax(y_train, axis=-1), y_pred=y_pred)
+# ====== evaluate the test data ====== #
 y_pred_probas = model.predict(X_score, batch_size=BATCH_SIZE)
 y_pred = np.argmax(y_pred_probas, axis=-1)
-report = classification_report(y_true=np.argmax(y_score, axis=-1), y_pred=y_pred)
-cm = confusion_matrix(y_true=np.argmax(y_score, axis=-1), y_pred=y_pred)
-print(report)
-print(cm)
+score_report = classification_report(y_true=np.argmax(y_score, axis=-1), y_pred=y_pred)
+score_cm = confusion_matrix(y_true=np.argmax(y_score, axis=-1), y_pred=y_pred)
+# ====== ploting the results ====== #
+plt.figure(figsize=(16, 8)) # (ncol, nrow)
+plot_confusion_matrix(train_cm, ax=(1, 2, 1), labels=digits, fontsize=8, title="Train")
+plot_confusion_matrix(score_cm, ax=(1, 2, 2), labels=digits, fontsize=8, title="Test")
+plot_save()

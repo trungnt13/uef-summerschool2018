@@ -3,6 +3,7 @@ import os
 import sys
 from numbers import Number
 from collections import OrderedDict, Mapping
+import itertools
 
 import numpy as np
 
@@ -250,3 +251,72 @@ def plot_save(path='/tmp/tmp.pdf', figs=None, dpi=180,
       plt.close('all')
   except Exception as e:
     sys.stderr.write('Cannot save figures to pdf, error:%s \n' % str(e))
+
+def plot_confusion_matrix(cm, labels, ax=None, fontsize=12, colorbar=False,
+                          title=None):
+  from matplotlib import pyplot as plt
+  cmap = plt.cm.Blues
+  ax = to_axis(ax, is_3D=False)
+  # calculate F1
+  N_row = np.sum(cm, axis=-1)
+  N_col = np.sum(cm, axis=0)
+  TP = np.diagonal(cm)
+  FP = N_col - TP
+  FN = N_row - TP
+  precision = TP / (TP + FP)
+  recall = TP / (TP + FN)
+  F1 = 2 / (1 / precision + 1 / recall)
+  F1[np.isnan(F1)] = 0.
+  F1_mean = np.mean(F1)
+  # column normalize
+  nb_classes = cm.shape[0]
+  cm = cm.astype('float32') / np.sum(cm, axis=1, keepdims=True)
+  im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+  # axis.get_figure().colorbar(im)
+  tick_marks = np.arange(len(labels))
+  ax.set_xticks(tick_marks)
+  ax.set_yticks(tick_marks)
+  ax.set_xticklabels(labels, rotation=-57, fontsize=fontsize)
+  ax.set_yticklabels(labels, fontsize=fontsize)
+  ax.set_ylabel('True label', fontsize=fontsize)
+  ax.set_xlabel('Predicted label', fontsize=fontsize)
+  # center text for value of each grid
+  worst_index = {i: np.argmax([val if j != i else -1
+                               for j, val in enumerate(row)])
+                 for i, row in enumerate(cm)}
+  for i, j in itertools.product(range(nb_classes),
+                                range(nb_classes)):
+    color = 'black'
+    weight = 'normal'
+    fs = fontsize
+    text = '%.2f' % cm[i, j]
+    if i == j: # diagonal
+      color = 'magenta'
+      # color = "darkgreen" if cm[i, j] <= 0.8 else 'forestgreen'
+      weight = 'bold'
+      fs = fontsize
+      text = '%.2f\nF1:%.2f' % (cm[i, j], F1[i])
+    elif j == worst_index[i]: # worst mis-classified
+      color = 'red'
+      weight = 'semibold'
+      fs = fontsize
+    plt.text(j, i, text,
+             weight=weight, color=color, fontsize=fs,
+             verticalalignment="center",
+             horizontalalignment="center")
+  # Turns off grid on the left Axis.
+  ax.grid(False)
+  # ====== colorbar ====== #
+  if colorbar == 'all':
+    fig = ax.get_figure()
+    axes = fig.get_axes()
+    fig.colorbar(im, ax=axes)
+  elif colorbar:
+    plt.colorbar(im, ax=ax)
+  # ====== set title ====== #
+  if title is None:
+    title = ''
+  title += ' (F1: %.3f)' % F1_mean
+  ax.set_title(title, fontsize=fontsize + 2, weight='semibold')
+  # axis.tight_layout()
+  return ax
