@@ -22,15 +22,18 @@ Following the instruction and install Miniconda from this link:
 > conda env create -f=environment.yml
 
 #### Using installed environment
-Activating and using our environment:
+Activating and deactivating our environment:
 
-For WINDOW:
+##### For WINDOW
+
 > activate uefsummer18
 
-For LINUX:
+> deactivate uefsummer18
+
+##### For LINUX
+
 > source activate uefsummer18
 
-Deactivating environment:
 > source deactivate
 
 Listing installed packages:
