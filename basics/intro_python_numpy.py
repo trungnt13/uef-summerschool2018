@@ -67,11 +67,11 @@ squares = [x**2 if x % 2 == 0
 print(squares)
 # ====== Loop and comprehension for dictionary ====== #
 d = {'person': 2, 'cat': 4, 'spider': 8}
-for animal, numb in d.iteritems(): # always use iteritems faster than items()
+for animal, numb in d.items(): # always use items faster than items()
   print('A %s has %d legs' % (animal, numb))
-for k in d.iterkeys():
+for k in d.keys():
   print(k)
-for v in d.itervalues():
+for v in d.values():
   print(v)
 # Dictionary comprehension
 nums = [0, 1, 2, 3, 4]
