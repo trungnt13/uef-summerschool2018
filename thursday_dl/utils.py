@@ -39,7 +39,7 @@ def read_audio_files():
   return sample_rate[0], outputs
 
 def extract_acoustic_features(data, sample_rate=8000,
-                              n_fft=512, hop_length=0.01, win_length=0.025,
+                              n_fft=512, hop_length=0.005, win_length=0.025,
                               n_mels=40, n_mfcc=20, fmin=64.0, fmax=None,
                               get_pow_spec=True, get_mel_spec=True, get_mfcc=True):
   """
@@ -184,128 +184,6 @@ def stack_frames(X, frame_length, step_length=1,
            frame_length * X.shape[1])
   strides = (X.strides[0] * step_length, X.strides[1])
   return np.lib.stride_tricks.as_strided(X, shape=shape, strides=strides)
-
-def segment_axis(a, frame_length=2048, step_length=512, axis=0,
-                 end='cut', pad_value=0, pad_mode='post'):
-  """Generate a new array that chops the given array along the given axis
-  into overlapping frames.
-
-  This method has been implemented by Anne Archibald,
-  as part of the talk box toolkit
-  example::
-
-      segment_axis(arange(10), 4, 2)
-      array([[0, 1, 2, 3],
-         ( [2, 3, 4, 5],
-           [4, 5, 6, 7],
-           [6, 7, 8, 9]])
-
-  Parameters
-  ----------
-  a: numpy.ndarray
-      the array to segment
-  frame_length: int
-      the length of each frame
-  step_length: int
-      the number of array elements by which the frames should overlap
-  axis: int, None
-      the axis to operate on; if None, act on the flattened array
-  end: 'cut', 'wrap', 'pad'
-      what to do with the last frame, if the array is not evenly
-          divisible into pieces. Options are:
-          - 'cut'   Simply discard the extra values
-          - 'wrap'  Copy values from the beginning of the array
-          - 'pad'   Pad with a constant value
-  pad_value: int
-      the value to use for end='pad'
-  pad_mode: 'pre', 'post'
-      if "pre", padding or wrapping at the beginning of the array.
-      if "post", padding or wrapping at the ending of the array.
-
-  Return
-  ------
-  a ndarray
-
-  The array is not copied unless necessary (either because it is unevenly
-  strided and being flattened or because end is set to 'pad' or 'wrap').
-
-  Note
-  ----
-  Modified work and error fixing Copyright (c) TrungNT
-
-  """
-  if axis is None:
-    a = np.ravel(a) # may copy
-    axis = 0
-
-  length = a.shape[axis]
-  overlap = frame_length - step_length
-
-  if overlap >= frame_length:
-    raise ValueError("frames cannot overlap by more than 100%")
-  if overlap < 0 or frame_length <= 0:
-    raise ValueError("overlap must be nonnegative and length must" +
-                     "be positive")
-
-  if length < frame_length or (length - frame_length) % (frame_length - overlap):
-    if length > frame_length:
-      roundup = frame_length + (1 + (length - frame_length) // (frame_length - overlap)) * (frame_length - overlap)
-      rounddown = frame_length + ((length - frame_length) // (frame_length - overlap)) * (frame_length - overlap)
-    else:
-      roundup = frame_length
-      rounddown = 0
-    assert rounddown < length < roundup
-    assert roundup == rounddown + (frame_length - overlap) \
-    or (roundup == frame_length and rounddown == 0)
-    a = a.swapaxes(-1, axis)
-
-    if end == 'cut':
-      a = a[..., :rounddown]
-    elif end in ['pad', 'wrap']: # copying will be necessary
-      s = list(a.shape)
-      s[-1] = roundup
-      b = np.empty(s, dtype=a.dtype)
-      # pre-padding
-      if pad_mode == 'post':
-        b[..., :length] = a
-        if end == 'pad':
-          b[..., length:] = pad_value
-        elif end == 'wrap':
-          b[..., length:] = a[..., :roundup - length]
-      # post-padding
-      elif pad_mode == 'pre':
-        b[..., -length:] = a
-        if end == 'pad':
-          b[..., :(roundup - length)] = pad_value
-        elif end == 'wrap':
-          b[..., :(roundup - length)] = a[..., :roundup - length]
-      # error
-      else:
-        raise RuntimeError("No support for pad mode: %s" % pad_mode)
-      a = b
-    a = a.swapaxes(-1, axis)
-    length = a.shape[0] # update length
-
-  if length == 0:
-    raise ValueError("Not enough data points to segment array " +
-            "in 'cut' mode; try 'pad' or 'wrap'")
-  assert length >= frame_length
-  assert (length - frame_length) % (frame_length - overlap) == 0
-  n = 1 + (length - frame_length) // (frame_length - overlap)
-  s = a.strides[axis]
-  newshape = a.shape[:axis] + (n, frame_length) + a.shape[axis + 1:]
-  newstrides = a.strides[:axis] + ((frame_length - overlap) * s, s) + a.strides[axis + 1:]
-
-  try:
-    return np.ndarray.__new__(np.ndarray, strides=newstrides,
-                              shape=newshape, buffer=a, dtype=a.dtype)
-  except TypeError:
-    a = a.copy()
-    # Shape doesn't change but strides does
-    newstrides = a.strides[:axis] + ((frame_length - overlap) * s, s) \
-    + a.strides[axis + 1:]
-    return np.ndarray.__new__(np.ndarray, strides=newstrides,
-                              shape=newshape, buffer=a, dtype=a.dtype)
 
 def rastafilt(x):
   """ Based on rastafile.m by Dan Ellis

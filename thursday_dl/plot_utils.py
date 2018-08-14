@@ -38,12 +38,13 @@ def to_axis(ax, is_3D=False):
   return ax
 
 def plot_spectrogram(x, vad=None, ax=None, colorbar=False,
-                     linewidth=0.5, title=None):
+                     linewidth=0.5, vmin=None, vmax=None,
+                     title=None):
   '''
   Parameters
   ----------
-  x : np.ndarray
-      2D array
+  x : np.ndarray (frequency, time)
+      2D matrix of the spectrogram in frequency-time domain
   vad : np.ndarray, list
       1D array, a red line will be draw at vad=1.
   ax : matplotlib.Axis
@@ -103,125 +104,21 @@ def plot_spectrogram(x, vad=None, ax=None, colorbar=False,
   # ax.axis('off')
   if title is not None:
     ax.set_ylabel(str(title) + '-' + str(x.shape), fontsize=6)
-  img = ax.pcolorfast(x, cmap=colormap, alpha=0.9)
+  img = ax.imshow(x, cmap=colormap, interpolation='kaiser', alpha=0.9,
+                  vmin=vmin, vmax=vmax, origin='lower')
   # ====== draw vad vertical line ====== #
   if vad is not None:
     for i, j in enumerate(vad):
       if j: ax.axvline(x=i, ymin=0, ymax=1, color='r', linewidth=linewidth,
                        alpha=0.3)
   # plt.grid(True)
-
   if colorbar == 'all':
     fig = ax.get_figure()
     axes = fig.get_axes()
     fig.colorbar(img, ax=axes)
   elif colorbar:
     plt.colorbar(img, ax=ax)
-
   return ax
-
-def plot_multiple_features(features, order=None, title=None, fig_width=4,
-                           sharex=False):
-  """ Plot a series of 1D and 2D in the same scale for comparison
-
-  Parameters
-  ----------
-  features: Mapping
-      pytho Mapping from name (string type) to feature matrix (`numpy.ndarray`)
-  order: None or list of string
-      if None, the order is keys of `features` sorted in alphabet order,
-      else, plot the features or subset of features based on the name
-      specified in `order`
-  title: None or string
-      title for the figure
-
-  Note
-  ----
-  delta or delta delta features should have suffix: '_d1' and '_d2'
-  """
-  known_order = [
-      # For audio processing
-      'raw',
-      'energy', 'energy_d1', 'energy_d2',
-      'vad',
-      'sad',
-      'sap', 'sap_d1', 'sap_d2',
-      'pitch', 'pitch_d1', 'pitch_d2',
-      'loudness', 'loudness_d1', 'loudness_d2',
-      'f0', 'f0_d1', 'f0_d2',
-      'spec', 'spec_d1', 'spec_d2',
-      'mspec', 'mspec_d1', 'mspec_d2',
-      'mfcc', 'mfcc_d1', 'mfcc_d2',
-      'sdc',
-      'qspec', 'qspec_d1', 'qspec_d2',
-      'qmspec', 'qmspec_d1', 'qmspec_d2',
-      'qmfcc', 'qmfcc_d1', 'qmfcc_d2',
-      'bnf', 'bnf_d1', 'bnf_d2',
-      'ivec', 'ivec_d1', 'ivec_d2',
-      # For image processing
-      # For video processing
-  ]
-
-  from matplotlib import pyplot as plt
-  if isinstance(features, (tuple, list)):
-    features = OrderedDict(features)
-  if not isinstance(features, Mapping):
-    raise ValueError("`features` must be mapping from name -> feature_matrix.")
-  # ====== check order or create default order ====== #
-  if order is not None:
-    order = [str(o) for o in order]
-  else:
-    if isinstance(features, OrderedDict):
-      order = features.keys()
-    else:
-      keys = sorted(features.keys() if isinstance(features, Mapping) else
-                    [k for k, v in features])
-      order = []
-      for name in known_order:
-        if name in keys:
-          order.append(name)
-      # add the remain keys
-      for name in keys:
-        if name not in order:
-          order.append(name)
-  # ====== get all numpy array ====== #
-  features = [(name, features[name]) for name in order
-              if name in features and
-              isinstance(features[name], np.ndarray) and
-              features[name].ndim <= 4]
-  plt.figure(figsize=(int(fig_width), len(features)))
-  for i, (name, X) in enumerate(features):
-    X = X.astype('float32')
-    plt.subplot(len(features), 1, i + 1)
-    # flatten 2D features with one dim equal to 1
-    if X.ndim == 2 and any(s == 1 for s in X.shape):
-      X = X.ravel()
-    # check valid dimension and select appropriate plot
-    if X.ndim == 1:
-      plt.plot(X)
-      plt.xlim(0, len(X))
-      plt.ylabel(name, fontsize=6)
-    elif X.ndim == 2: # transpose to frequency x time
-      plot_spectrogram(X.T, title=name)
-    elif X.ndim == 3:
-      plt.imshow(X)
-      plt.xticks(())
-      plt.yticks(())
-      plt.ylabel(name, fontsize=6)
-    else:
-      raise RuntimeError("No support for >= 3D features.")
-    # auto, equal
-    plt.gca().set_aspect(aspect='auto')
-    # plt.axis('off')
-    plt.xticks(())
-    # plt.yticks(())
-    plt.tick_params(axis='y', size=6, labelsize=4, color='r', pad=0,
-                    length=2)
-    # add title to the first subplot
-    if i == 0 and title is not None:
-      plt.title(str(title), fontsize=8)
-    if sharex:
-      plt.subplots_adjust(hspace=0)
 
 def plot_save(path='/tmp/tmp.pdf', figs=None, dpi=180,
               tight_plot=False, clear_all=True, log=True):
