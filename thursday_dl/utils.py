@@ -40,8 +40,7 @@ def read_audio_files():
 
 def extract_acoustic_features(data, sample_rate=8000,
                               n_fft=512, hop_length=0.005, win_length=0.025,
-                              n_mels=40, n_mfcc=20, fmin=64.0, fmax=None,
-                              get_pow_spec=True, get_mel_spec=True, get_mfcc=True):
+                              n_mels=40, n_mfcc=20, fmin=64.0, fmax=None):
   """
   data : array (n_samples,)
   sample_rate : int
@@ -49,6 +48,9 @@ def extract_acoustic_features(data, sample_rate=8000,
   hop_length : float (in second)
   win_length : flaot (in second)
   """
+  get_pow_spec = True
+  get_mel_spec = True
+  get_mfcc = True
   # ====== check arguments ====== #
   data = pre_emphasis(data)
   win_length = int(win_length * sample_rate)
@@ -77,7 +79,7 @@ def extract_acoustic_features(data, sample_rate=8000,
   # all the features are shape [feat_dim, time_dim]
   # deep network require order [time_dim, feat_dim]
   # so we transpose everythign
-  return tuple([i.T for i in results])
+  return tuple([i.astype('float32').T for i in results])
 
 # ===========================================================================
 # Others

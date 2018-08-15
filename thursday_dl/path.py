@@ -1,2 +1,3 @@
-# Link to the dataset: https://github.com/Jakobovski/free-spoken-digit-dataset
-FSDD_PATH = '/tmp/free-spoken-digit-dataset/recordings'
+FSDD_PATH = r'/tmp/free-spoken-digit-dataset/recordings'
+CACHE_PATH = r'/tmp/uefsummer18.pkl'
+PLOT_PATH = r'/tmp/tmp.pdf'
