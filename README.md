@@ -2,6 +2,8 @@
 
 [Programme and schedule](https://vvestman.github.io/summerschool/)
 
+[Dataset: Free Spoken Digit Dataset](https://github.com/Jakobovski/free-spoken-digit-dataset)
+
 How to clone all the code and data provided to your computer (alternatively download .zip file from github page):
 
 ```bash
