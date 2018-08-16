@@ -1,7 +1,4 @@
 import matplotlib
-# use simple 'Agg' backend for figure to PDF, switch to 'TkAgg'
-# if you want to show figure real time
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 import os
@@ -9,7 +6,6 @@ import pickle
 import warnings
 
 import numpy as np
-from scipy.io import wavfile
 
 import tensorflow as tf
 from tensorflow import keras
@@ -19,7 +15,7 @@ from utils import (read_audio_files, performance_evaluate,
                    extract_acoustic_features, one_hot, stack_frames)
 from plot_utils import (plot_save, plot_confusion_matrix, plot_spectrogram)
 from ml_utils import show_tsne_clusters
-from path import CACHE_PATH, PLOT_PATH
+from path import CACHE_PATH, FIG_PATH
 
 # use the same random seed for reproducibility
 np.random.seed(123456)
@@ -30,10 +26,6 @@ CONTEXT_LENGTH = 6 # i.e. 5 for left and 5 for right
 BATCH_SIZE = 128
 LEARNING_RATE = 0.01
 NUM_EPOCH = 12
-# Two different input mode:
-#  - one using sequencing: organize feature and context into 3-D tensor
-#  - one using stacking: stack context with feature into long vector
-INPUT_MODE = 'sequencing'
 INPUT_FEATURE = 1 # 0 for power-spec, 1 for mel-spec, 2 for MFCCs
 # ===========================================================================
 # Reading audio and preprocessing features
@@ -100,6 +92,8 @@ for spk_idx, spk in enumerate(speakers):
   plot_spectrogram(mfcc.T)
   plt.title("MFCCs coefficients")
   plt.gca().set_aspect(aspect='auto')
+
+  # plt.show(block=True)
 # ===========================================================================
 # Prepare data for training
 # ===========================================================================
@@ -122,8 +116,8 @@ for name in all_name:
   num_frames, num_features = x.shape
   # adding context window
   x = stack_frames(x, frame_length=CONTEXT_LENGTH * 2 + 1)
-  if INPUT_MODE == 'sequencing':
-    x = np.reshape(x, newshape=(num_frames, CONTEXT_LENGTH * 2 + 1, num_features))
+  # sequencing the image
+  x = np.reshape(x, newshape=(num_frames, CONTEXT_LENGTH * 2 + 1, num_features))
   y = [int(name.split('_')[0])] * len(x)
   # add to appropriate set
   if any(spk in name for spk in train_speakers):
@@ -150,8 +144,6 @@ data = {}
 for i in range(60):
   frame = X_train[i]
   y = np.argmax(y_train[i]) # note: y is one-hot
-  if INPUT_MODE == 'stacking':
-    frame = np.reshape(frame, newshape=(CONTEXT_LENGTH * 2 + 1, num_features))
   plot_spectrogram(x=frame.T, ax=(2, 30, i + 1),
                    vmin=vmin, vmax=vmax, title='#%d' % y)
 # ====== print some logs ====== #
@@ -171,11 +163,11 @@ your_choice = 1
 if your_choice == 1: # Dense require 2-D input so flatten everything
   model.add(keras.layers.Flatten())
 
-  model.add(keras.layers.Dense(512, bias_initializer=None, activation='linear'))
+  model.add(keras.layers.Dense(64, bias_initializer=None, activation='linear'))
   model.add(keras.layers.BatchNormalization())
   model.add(keras.layers.Activation(activation='relu'))
 
-  model.add(keras.layers.Dense(512, bias_initializer=None, activation='linear'))
+  model.add(keras.layers.Dense(64, bias_initializer=None, activation='linear'))
   model.add(keras.layers.BatchNormalization())
   model.add(keras.layers.Activation(activation='relu'))
 # ====== CNN ====== #
@@ -240,6 +232,8 @@ plt.plot(records.history['categorical_accuracy'], color='red', label='Train')
 plt.plot(records.history['val_categorical_accuracy'], color='blue', label='Valid')
 plt.legend()
 plt.title("Accuracy")
+
+# plt.show(block=True)
 # ===========================================================================
 # Get intermediate representation and plot it
 # ===========================================================================
@@ -248,8 +242,10 @@ intermediate_model = keras.Model(inputs=model.input,
 intermediate_train = intermediate_model.predict(X_train, batch_size=BATCH_SIZE)
 intermediate_score = intermediate_model.predict(X_score, batch_size=BATCH_SIZE)
 # ====== extra fun, visualizing T-SNE clusters ====== #
-# show_tsne_clusters(X=X_score, y=y_score, title='Score - Acoustic Feat')
-# show_tsne_clusters(X=intermediate_score, y=y_score, title='Score - Latent Space')
+show_tsne_clusters(X=X_score, y=y_score, title='Score - Acoustic Feat')
+show_tsne_clusters(X=intermediate_score, y=y_score, title='Score - Latent Space')
+
+# plt.show(block=True)
 # ===========================================================================
 # Evaluate the model
 # ===========================================================================
@@ -267,5 +263,6 @@ score_cm = confusion_matrix(y_true=np.argmax(y_score, axis=-1), y_pred=y_pred)
 plt.figure(figsize=(16, 8)) # (ncol, nrow)
 plot_confusion_matrix(train_cm, ax=(1, 2, 1), labels=digits, fontsize=8, title="Train")
 plot_confusion_matrix(score_cm, ax=(1, 2, 2), labels=digits, fontsize=8, title="Score")
-# ====== finally save everything to PDF file ====== #
-plot_save(PLOT_PATH)
+
+# plt.show(block=True)
+plot_save(FIG_PATH)
