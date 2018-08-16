@@ -11,7 +11,6 @@ __email__ = 'omid.sadjadi@nist.gov'
 
 import time
 import numpy as np
-import multiprocessing as mp
 import copy
 
 EPS = np.finfo(float).eps
@@ -79,16 +78,9 @@ class GMM(GmmUtils):
         self.C_ = self.compute_C()
 
     def fit(self, data_list):
-        # binding of the main procedure gmm_em
-        p = mp.Pool(processes=self.nworkers)
-        if type(data_list) == str:
-            features_list = np.genfromtxt(data_list, dtype='str')
-        else:
-            features_list = data_list
-        nparts = min(self.nworkers, len(features_list))
-        data_split = np.array_split(features_list, nparts)
+
         print('\nInitializing the GMM hyperparameters ...\n')
-        # supports 4096 components, modify for more components
+
         niter = [1, 2, 4, 4, 4, 4, 6, 6, 10, 10, 10, 10, 10]
         niter[int(np.log2(self.nmix))] = self.final_iter
         mix = 1
@@ -98,25 +90,33 @@ class GMM(GmmUtils):
                 print('EM iter#: {} \t'.format(iter+1), end=" ")
                 self.C_ = self.compute_C()
                 tic = time.time()
-                res = p.map(self.expectation, data_split)
-                N, F, S, L, nframes = GMM.reduce_expectation_res(res)
+                N, F, S, L, nframes = self.expectation(data_list)
                 self.maximization(N, F, S)
                 print("[llk = {:.2f}]\t[elaps = {:.2f}s]".format(L/nframes,time.time() - tic))
-                del res
             if mix < self.nmix:
                 self.gmm_mixup()
             mix *= 2
-        p.close()
 
     # Added by Ville:
-    def adapt(self, data, relevance_factor):
+    def adapt_means(self, data, relevance_factor):
         N, F, S, L, nframes = self.expectation(data)
         alpha = N / (N + relevance_factor)  # tradeoff between ML mean and UBM mean
         m_ML = F / N
         m = self.mu * (1 - alpha) + m_ML * alpha
+        return m
+
+    # Added by Ville (scoring all models vs. all test segments):
+    def score_with_adapted_means(self, model_means, test_features):
+        n_models = model_means.size
+        n_test_segments = test_features.size
         adapted_gmm = copy.deepcopy(self)
-        adapted_gmm.mu = m
-        return adapted_gmm
+        scores = np.zeros((n_models, n_test_segments))
+        for test_segment in range(n_test_segments):
+            for model in range(n_models):
+                adapted_gmm.mu = model_means[model]
+                adapted_llk = adapted_gmm.compute_log_lik(test_features[test_segment])
+                scores[model, test_segment] = np.mean(adapted_llk)
+        return scores
 
 
     def expectation(self, data):
