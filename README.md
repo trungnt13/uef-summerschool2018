@@ -12,6 +12,14 @@ git clone --recursive https://github.com/trungnt13/uef-summerschool2018.git
 For Windows users, using github desktop may significantly simplify the process:
 [https://desktop.github.com/](https://desktop.github.com/)
 
+## Tutors
+
+Speech processing and i-vector: [Ville Vestman](ville.vestman@gmail.com)
+
+Deep learning: [Trung Ngo Trong](trung@imito.ai)
+
+Reinforcement learning: [Anssi Kanervisto](anssi.kanervisto@uef.fi)
+
 ## Setting up python environment
 
 #### Installing miniconda
