@@ -14,11 +14,11 @@ For Windows users, using github desktop may significantly simplify the process:
 
 ## Tutors
 
-Speech processing and i-vector: [Ville Vestman](ville.vestman@gmail.com)
+Speech processing and i-vector: [Ville Vestman](mailto:ville.vestman@gmail.com)
 
-Deep learning: [Trung Ngo Trong](trung@imito.ai)
+Deep learning: [Trung Ngo Trong](mailto:trung@imito.ai)
 
-Reinforcement learning: [Anssi Kanervisto](anssi.kanervisto@uef.fi)
+Reinforcement learning: [Anssi Kanervisto](mailto:anssi.kanervisto@uef.fi)
 
 ## Setting up python environment
 
