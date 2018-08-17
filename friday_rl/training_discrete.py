@@ -8,12 +8,11 @@ from learning_agent import LearningAgent
 from gym.envs.toy_text.frozen_lake import FrozenLakeEnv
 
 # How long do we play
-NUM_EPISODES = 1000000
+NUM_EPISODES = 100
 # How often we print results
-PRINT_EVERY_EPS = 10
+PRINT_EVERY_EPS = 1
 
-#environment = gym.make("FrozenLake-v0")
-environment = FrozenLakeEnv(is_slippery=False)
+environment = gym.make("FrozenLake-v0")
 
 num_states = environment.observation_space.n
 num_actions = environment.action_space.n
