@@ -5,19 +5,23 @@
 #
 import gym
 from learning_agent import LearningAgent
+from q_agent import QAgent
+from sarsa_agent import SarsaAgent
 from gym.envs.toy_text.frozen_lake import FrozenLakeEnv
 
 # How long do we play
-NUM_EPISODES = 100
+NUM_EPISODES = 1000
 # How often we print results
-PRINT_EVERY_EPS = 1
+PRINT_EVERY_EPS = 10
 
 environment = gym.make("FrozenLake-v0")
 
 num_states = environment.observation_space.n
 num_actions = environment.action_space.n
 
-agent = LearningAgent(num_states, num_actions)
+#agent = LearningAgent(num_states, num_actions)
+#agent = QAgent(num_states, num_actions)
+agent = SarsaAgent(num_states, num_actions)
 
 sum_reward = 0
 
