@@ -1,5 +1,5 @@
 .DS_Store
-sftp-config.json
+sftp-config*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

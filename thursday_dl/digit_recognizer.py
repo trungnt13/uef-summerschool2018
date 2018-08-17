@@ -1,4 +1,5 @@
 import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 import os
@@ -23,7 +24,7 @@ np.random.seed(123456)
 # Constants control the training
 # ===========================================================================
 CONTEXT_LENGTH = 6 # i.e. 5 for left and 5 for right
-BATCH_SIZE = 128
+BATCH_SIZE = 32 # 32
 LEARNING_RATE = 0.01
 NUM_EPOCH = 12
 INPUT_FEATURE = 1 # 0 for power-spec, 1 for mel-spec, 2 for MFCCs
@@ -159,7 +160,7 @@ y_true = tf.placeholder(dtype=tf.float32, shape=(None,) + y_train.shape[1:], nam
 # ====== Create the network ====== #
 model = keras.Sequential()
 model.add(keras.layers.Dropout(rate=0.3))
-your_choice = 1
+your_choice = 6
 if your_choice == 1: # Dense require 2-D input so flatten everything
   model.add(keras.layers.Flatten())
 
@@ -190,6 +191,8 @@ elif your_choice == 3: # more advance CNN 2D
 # ====== RNN ====== #
 elif your_choice == 4:
   assert X.get_shape().ndims == 3
+  # keras.layers.GRU
+  # keras.layers.LSTM
   model.add(keras.layers.SimpleRNN(units=16, activation='relu', return_sequences=True))
   model.add(keras.layers.SimpleRNN(units=16, activation='relu', return_sequences=False))
 elif your_choice == 5: # more advance Bidirectional RNN
@@ -200,13 +203,25 @@ elif your_choice == 5: # more advance Bidirectional RNN
       layer=keras.layers.SimpleRNN(units=8, activation='relu', return_sequences=False)))
 # ====== Exercise: CNN + RNN + Dense ====== #
 elif your_choice == 6:
-  raise NotImplementedError
+  model.add(keras.layers.Lambda(function=lambda x: tf.expand_dims(x, axis=-1)))
+  model.add(keras.layers.Conv2D(filters=16, kernel_size=(3, 3)))
+  model.add(keras.layers.MaxPool2D(pool_size=(2, 2)))
+  model.add(keras.layers.Reshape(target_shape=(39, 304)))
+
+  model.add(keras.layers.Bidirectional(
+      layer=keras.layers.SimpleRNN(units=8, activation='relu', return_sequences=True)))
+
+  model.add(keras.layers.Dense(64, bias_initializer=None, activation='linear'))
+  model.add(keras.layers.BatchNormalization())
+  model.add(keras.layers.Activation(activation='relu'))
 # ====== output layer ====== #
 # just to make sure everything is 2-D before output layer
 model.add(keras.layers.Flatten(name='latent'))
 model.add(keras.layers.Dense(len(digits), activation='softmax'))
 # ====== Configure a model for classification ====== #
 optimizer = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE)
+# tf.train.Adam
+# tf.train.Adadelta
 model.compile(optimizer=optimizer,
               loss=keras.losses.categorical_crossentropy,
               metrics=[keras.metrics.categorical_accuracy])
@@ -232,7 +247,6 @@ plt.plot(records.history['categorical_accuracy'], color='red', label='Train')
 plt.plot(records.history['val_categorical_accuracy'], color='blue', label='Valid')
 plt.legend()
 plt.title("Accuracy")
-
 # plt.show(block=True)
 # ===========================================================================
 # Get intermediate representation and plot it
@@ -244,7 +258,6 @@ intermediate_score = intermediate_model.predict(X_score, batch_size=BATCH_SIZE)
 # ====== extra fun, visualizing T-SNE clusters ====== #
 show_tsne_clusters(X=X_score, y=y_score, title='Score - Acoustic Feat')
 show_tsne_clusters(X=intermediate_score, y=y_score, title='Score - Latent Space')
-
 # plt.show(block=True)
 # ===========================================================================
 # Evaluate the model
